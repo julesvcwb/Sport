@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LHUT Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #181c22;
+    --border: #232830;
+    --accent: #e8f04a;
+    --accent2: #4af0a8;
+    --accent3: #f04a7a;
+    --text: #e8eaf0;
+    --text-muted: #6b7280;
+    --text-dim: #3a4050;
+    --z1: #4af0a8;
+    --z2: #a8e84a;
+    --z3: #f0c84a;
+    --z4: #f08a4a;
+    --z5: #f04a7a;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* GRID NOISE BACKGROUND */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(232,240,74,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(232,240,74,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 24px 16px 80px; }
+
+  /* HEADER */
+  .header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+  }
+  .header-left h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    letter-spacing: 0.04em;
+    line-height: 1;
+    color: var(--text);
+    margin-top: 4px;
+  }
+  .header-left .goal-tag {
+    margin-top: 6px;
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(232,240,74,0.08);
+    border: 1px solid rgba(232,240,74,0.2);
+    border-radius: 4px;
+    padding: 3px 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+  }
+  /* NAV TABS */
+  .nav-tabs {
+    display: flex; gap: 2px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 3px;
+    margin-bottom: 28px;
+  }
+  .nav-tab {
+    flex: 1; text-align: center;
+    padding: 9px 12px;
+    border-radius: 6px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.2s;
+    border: none; background: none;
+  }
+  .nav-tab:hover { color: var(--text); }
+  .nav-tab.active {
+    background: var(--surface2);
+    color: var(--accent);
+    border: 1px solid var(--border);
+  }
+
+  /* WEEK OVERVIEW BAR */
+  .week-overview {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: flex; align-items: center; gap: 0;
+  }
+  .overview-stat {
+    flex: 1;
+    text-align: center;
+    padding: 0 16px;
+    border-right: 1px solid var(--border);
+  }
+  .overview-stat:last-child { border-right: none; }
+  .overview-stat .stat-val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    line-height: 1;
+  }
+  .overview-stat .stat-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 3px;
+  }
+  .overview-stat .stat-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  .stat-done { color: var(--accent2); }
+  .stat-remaining { color: var(--accent); }
+  .stat-total { color: var(--text-dim); }
+
+  /* PROGRESS BAR */
+  .week-progress {
+    margin-bottom: 24px;
+  }
+  .progress-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 8px;
+  }
+  .progress-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+  .progress-pct {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    color: var(--accent);
+  }
+  .progress-bar-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border-radius: 2px;
+    transition: width 0.5s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  /* SESSIONS */
+  .sessions-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .session-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    cursor: pointer;
+  }
+  .session-card:hover {
+    border-color: rgba(232,240,74,0.2);
+  }
+  .session-card.done {
+    border-color: rgba(74,240,168,0.25);
+    background: rgba(74,240,168,0.03);
+  }
+  .session-card.rest {
+    opacity: 0.6;
+  }
+
+  .session-main {
+    display: flex; align-items: center; gap: 0;
+    padding: 0;
+  }
+
+  .session-day {
+    width: 72px; min-width: 72px;
+    padding: 18px 0;
+    text-align: center;
+    border-right: 1px solid var(--border);
+  }
+  .session-day .day-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    color: var(--text);
+    line-height: 1;
+  }
+  .session-day .day-city {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--text-dim);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 3px;
+  }
+
+  .session-body {
+    flex: 1;
+    padding: 14px 18px;
+  }
+  .session-type-row {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+  }
+  .type-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    border-radius: 3px;
+    border: 1px solid;
+  }
+  .type-badge.repos { color: var(--text-dim); border-color: var(--text-dim); }
+  .type-badge.z1 { color: var(--z1); border-color: var(--z1); }
+  .type-badge.z2 { color: var(--z2); border-color: var(--z2); }
+  .type-badge.z3 { color: var(--z3); border-color: var(--z3); }
+  .type-badge.z4 { color: var(--z4); border-color: var(--z4); }
+  .type-badge.z5 { color: var(--z5); border-color: var(--z5); }
+
+  .session-name {
+    font-weight: 500;
+    font-size: 14px;
+    color: var(--text);
+    line-height: 1.2;
+  }
+  .session-meta {
+    display: flex; gap: 16px; margin-top: 5px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+  .session-meta span { display: flex; align-items: center; gap: 4px; }
+  .meta-icon { font-size: 10px; }
+
+  .session-right {
+    padding: 18px 20px;
+    text-align: right;
+    border-left: 1px solid var(--border);
+    min-width: 80px;
+  }
+  .check-btn {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    transition: all 0.2s;
+    margin-left: auto;
+  }
+  .check-btn:hover { border-color: var(--accent2); }
+  .check-btn.checked {
+    background: var(--accent2);
+    border-color: var(--accent2);
+    color: var(--bg);
+  }
+
+  /* EXPANDED DETAIL */
+  .session-detail {
+    display: none;
+    border-top: 1px solid var(--border);
+    padding: 18px 20px;
+    background: var(--surface2);
+  }
+  .session-card.expanded .session-detail { display: block; }
+
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 14px;
+  }
+  .detail-block {}
+  .detail-block .block-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .seance-list {
+    list-style: none;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .seance-list li {
+    display: flex; gap: 8px; align-items: flex-start;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+  .seance-list li::before {
+    content: '→';
+    color: var(--accent);
+    font-size: 11px;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+  .zone-pills {
+    display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .zone-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+  .conseil-box {
+    background: rgba(232,240,74,0.05);
+    border: 1px solid rgba(232,240,74,0.15);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--text-muted);
+    font-style: italic;
+    line-height: 1.5;
+  }
+  .conseil-box::before {
+    content: '⚡ ';
+    font-style: normal;
+  }
+
+  /* TOTALS SUMMARY CARD */
+  .totals-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin-top: 24px;
+  }
+  .totals-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 16px;
+  }
+  .totals-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  }
+  .total-item { text-align: center; }
+  .total-item .t-val {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    line-height: 1;
+    color: var(--accent);
+  }
+  .total-item .t-rem {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    color: var(--text-dim);
+    margin-top: 2px;
+  }
+  .total-item .t-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  /* EMPTY / PLACEHOLDER VIEW */
+  .placeholder-view {
+    padding: 60px 40px;
+    text-align: center;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    color: var(--text-dim);
+  }
+  .placeholder-view h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+  .placeholder-view p {
+    font-size: 13px;
+    line-height: 1.6;
+    max-width: 340px;
+    margin: 0 auto;
+  }
+  .placeholder-view .json-hint {
+    margin-top: 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--accent2);
+    text-align: left;
+    display: inline-block;
+  }
+
+  /* SECTION TAB CONTENT */
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Week label header */
+  .week-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px;
+  }
+  .week-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    line-height: 1;
+    letter-spacing: 0.03em;
+  }
+  .week-subtitle {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 2px;
+  }
+  .week-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--accent3);
+    border: 1px solid var(--accent3);
+    border-radius: 4px;
+    padding: 4px 12px;
+    opacity: 0.8;
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .header { flex-direction: column; gap: 12px; }
+    .countdown { text-align: left; }
+    .week-overview { flex-wrap: wrap; gap: 12px; }
+    .overview-stat { border-right: none; flex: 0 0 calc(50% - 8px); }
+    .totals-grid { grid-template-columns: repeat(2, 1fr); }
+    .detail-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Done state visual */
+  .session-card.done .session-name { text-decoration: line-through; opacity: 0.5; }
+  .session-card.done .session-day .day-name { color: var(--accent2); }
+
+  /* Sensation tag */
+  .sensation-tag {
+    display: inline-flex; align-items: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+    font-style: italic;
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <h1>TRAINING<br>TRACKER</h1>
+      <div class="goal-tag">🎯 Objectif : Sub 4h00</div>
+    </div>
+  </div>
+
+  <!-- NAV -->
+  <div class="nav-tabs">
+    <button class="nav-tab" data-tab="prev" onclick="switchTab('prev')">← S-5</button>
+    <button class="nav-tab active" data-tab="current" onclick="switchTab('current')">S-4 · En cours</button>
+    <button class="nav-tab" data-tab="next" onclick="switchTab('next')">S-3 →</button>
+  </div>
+
+  <!-- TAB: SEMAINE PASSÉE -->
+  <div class="tab-content" id="tab-prev">
+    <div class="week-header">
+      <div>
+        <div class="week-title" id="prev-title">SEMAINE —</div>
+        <div class="week-subtitle" id="prev-periode">—</div>
+      </div>
+      <div class="week-badge" id="prev-badge">TERMINÉE</div>
+    </div>
+    <div id="prev-content">
+      <div class="placeholder-view">
+        <h3>Semaine précédente</h3>
+        <p>Charge le JSON unifié via le bouton en bas de la semaine courante. Les données S-5 s'afficheront ici automatiquement.</p>
+        <div class="json-hint">→ "semaine_precedente": { ... }</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB: SEMAINE COURANTE -->
+  <div class="tab-content active" id="tab-current">
+    <div class="week-header">
+      <div>
+        <div class="week-title" id="current-title">SEMAINE 4</div>
+        <div class="week-subtitle" id="current-periode">4 semaines avant LHUT</div>
+      </div>
+      <div class="week-badge" id="current-badge" style="color:var(--accent); border-color:var(--accent);">EN COURS</div>
+    </div>
+
+    <!-- PROGRESS BAR -->
+    <div class="week-progress">
+      <div class="progress-header">
+        <span class="progress-label">Progression semaine</span>
+        <span class="progress-pct" id="prog-pct">0%</span>
+      </div>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="prog-bar" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- OVERVIEW STATS -->
+    <div class="week-overview">
+      <div class="overview-stat">
+        <div class="stat-val stat-done" id="ov-km-done">0</div>
+        <div class="stat-label">km faits</div>
+        <div class="stat-sub" id="ov-km-total">/ — km</div>
+      </div>
+      <div class="overview-stat">
+        <div class="stat-val stat-remaining" id="ov-km-rem">—</div>
+        <div class="stat-label">km restants</div>
+      </div>
+      <div class="overview-stat">
+        <div class="stat-val stat-done" id="ov-dp-done">0</div>
+        <div class="stat-label">d+ faits (m)</div>
+        <div class="stat-sub" id="ov-dp-total">/ — m</div>
+      </div>
+      <div class="overview-stat">
+        <div class="stat-val stat-remaining" id="ov-time-rem">—</div>
+        <div class="stat-label">temps restant</div>
+        <div class="stat-sub" id="ov-time-done"></div>
+      </div>
+    </div>
+
+    <!-- SESSIONS LIST -->
+    <div class="sessions-list" id="sessions-list"></div>
+
+    <!-- TOTALS CARD -->
+    <div class="totals-card" id="totals-card" style="display:none;">
+      <div class="totals-title">Totaux semaine</div>
+      <div class="totals-grid">
+        <div class="total-item">
+          <div class="t-val" id="tot-km">—</div>
+          <div class="t-rem" id="tot-km-rem"></div>
+          <div class="t-label">Km total / restant</div>
+        </div>
+        <div class="total-item">
+          <div class="t-val" id="tot-dp">—</div>
+          <div class="t-rem" id="tot-dp-rem"></div>
+          <div class="t-label">D+ total / restant</div>
+        </div>
+        <div class="total-item">
+          <div class="t-val" id="tot-time">—</div>
+          <div class="t-rem" id="tot-time-rem"></div>
+          <div class="t-label">Durée total / restant</div>
+        </div>
+        <div class="total-item">
+          <div class="t-val" id="tot-seances">—</div>
+          <div class="t-rem" id="tot-seances-rem"></div>
+          <div class="t-label">Séances total / restantes</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- UPLOAD UNIFIED JSON -->
+    <div style="margin-top:20px; text-align:center;">
+      <label style="cursor:pointer; display:inline-flex; align-items:center; gap:8px; padding:10px 20px; border:1px solid var(--border); border-radius:8px; font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-muted);">
+        🔄 Charger JSON semaine (unifié)
+        <input type="file" accept=".json" id="upload-unified" style="display:none;" onchange="loadUnifiedFile(event)">
+      </label>
+    </div>
+  </div>
+
+  <!-- TAB: SEMAINE SUIVANTE -->
+  <div class="tab-content" id="tab-next">
+    <div class="week-header">
+      <div>
+        <div class="week-title" id="next-title">SEMAINE —</div>
+        <div class="week-subtitle" id="next-periode">—</div>
+      </div>
+      <div class="week-badge" id="next-badge">À VENIR</div>
+    </div>
+    <div id="next-content">
+      <div class="placeholder-view">
+        <h3>Semaine suivante</h3>
+        <p>Charge le JSON unifié via le bouton en bas de la semaine courante. Les données S-3 s'afficheront ici automatiquement.</p>
+        <div class="json-hint">→ "semaine_suivante": { ... }</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+// ============================================================
+// DATA — S-4 intégrée directement
+// ============================================================
+const WEEK_S4 = {
+  "semaine": 4,
+  "periode": "4 semaines avant LHUT",
+  "objectif": "sub 4h00",
+  "race_date": "2025-06-14",
+  "totaux": {
+    "km_min": 52, "km_max": 57,
+    "dp_min": 1100, "dp_max": 1400,
+    "duree_min_min": 285, "duree_max_min": 315
+  },
+  "jours": [
+    {
+      "jour": "Lundi", "ville": "Lausanne",
+      "sport": "Repos", "type": "Récupération totale",
+      "km": 0, "dp": 0, "duree_min": 0,
+      "objectif": "Récupération rugby + soirées + S-5",
+      "sensation": "Corps cassé — repos obligatoire",
+      "intensite_zone": "repos",
+      "cardio_max": "—", "denivele_vise": "0 m D+", "terrain": "—",
+      "seance": ["Zéro course","Hydratation maximale","Sommeil prioritaire","Cloque pouce : désinfecter et protéger"],
+      "conseil": "Repos acté."
+    },
+    {
+      "jour": "Mardi", "ville": "Lausanne",
+      "sport": "Repos", "type": "Récupération totale",
+      "km": 0, "dp": 0, "duree_min": 0,
+      "objectif": "Ischios et courbatures encore présents — repos prolongé",
+      "sensation": "Pas de forcing sur corps pas prêt",
+      "intensite_zone": "repos",
+      "cardio_max": "—", "denivele_vise": "0 m D+", "terrain": "—",
+      "seance": ["Zéro course","Étirements doux ischios si confortable","Hydratation et alimentation soignées"],
+      "conseil": "Repos acté."
+    },
+    {
+      "jour": "Mercredi", "ville": "Lausanne",
+      "sport": "Course à pied", "type": "Zone 2 — test ischio + reprise",
+      "km": 9, "dp": 60, "duree_min": 58,
+      "objectif": "Évaluer les ischios — reprendre sans forcer",
+      "sensation": "Si douleur ischio dès km 2 → stop immédiat",
+      "intensite_zone": "z1",
+      "cardio_max": "150 bpm", "denivele_vise": "< 80 m D+", "terrain": "Plat — bords du lac Lausanne",
+      "seance": [
+        "8-10 km plat strict — bords du lac Ouchy",
+        "Allure très libre 5:40-6:00/km, FC < 150 bpm",
+        "Aucune montée, aucun escalier",
+        "Si ischios tirent fort → stop à 5 km",
+        "Protéger cloque pouce avant de partir"
+      ],
+      "conseil": "Test uniquement. Envoie sensations et données après — ça conditionne tout le reste de la semaine."
+    },
+    {
+      "jour": "Jeudi", "ville": "Lausanne",
+      "sport": "Course à pied", "type": "Escaliers — charge maximale S-4",
+      "km": 10.5, "dp": 650, "duree_min": 75,
+      "objectif": "Stimulus escaliers maximal de toute la prépa — 600-700 m D+",
+      "sensation": "Effort soutenu en montée — chargé mais pas détruit en fin de séance",
+      "intensite_zone": "z4",
+      "cardio_max": "185 bpm", "denivele_vise": "600-700 m D+", "terrain": "Parc de Milan — escaliers Lausanne",
+      "seance": [
+        "Échauffement 2 km plat Zone 2",
+        "15-18 montées Parc de Milan — objectif 600-700 m D+",
+        "Montée : marche active bras-jambes, rythme maximal soutenable",
+        "Descente : trottinée contrôlée, récup complète avant chaque montée",
+        "FC montée : jusqu'à 180-185 bpm — normal pour ce profil",
+        "Signal d'arrêt : jambes qui flanchent ou souffle qui ne récupère plus en descente",
+        "Retour 2 km plat Zone 2",
+        "Si ischios encore sensibles → réduire à 10 montées maximum"
+      ],
+      "conseil": "C'est LA séance la plus importante de S-4. Après celle-ci on ne construit plus d'adaptation escaliers. Donne tout mais arrête avant l'épuisement complet."
+    },
+    {
+      "jour": "Vendredi", "ville": "Lausanne",
+      "sport": "Course à pied", "type": "Sortie longue rappel — 20-22 km",
+      "km": 21, "dp": 450, "duree_min": 120,
+      "objectif": "Dernière longue significative de la prépa — endurance + D+ route",
+      "sensation": "Soutenu et constant — pas d'accélération sur la fin",
+      "intensite_zone": "z2",
+      "cardio_max": "165 bpm", "denivele_vise": "400-500 m D+", "terrain": "Vallonné — Lausanne",
+      "seance": [
+        "20-22 km terrain vallonné Lausanne",
+        "Allure 5:30-5:45/km, FC 155-163 bpm",
+        "D+ naturel du terrain — pas d'escaliers aujourd'hui",
+        "Gel km 10 + gel km 18 — simuler protocole course",
+        "Eau obligatoire — flasque ou fontaines",
+        "Si ischios sensibles post-jeudi → réduire à 18 km terrain plus plat"
+      ],
+      "conseil": "Allure constante du début à la fin — résiste à la tentation d'accélérer sur la fin. C'est la dernière longue qui compte vraiment."
+    },
+    {
+      "jour": "Samedi", "ville": "Lausanne",
+      "sport": "Course à pied", "type": "Seuil — dernière séance intense de la prépa",
+      "km": 13.5, "dp": 80, "duree_min": 65,
+      "objectif": "Confirmer le seuil à 4:20-4:25/km — dernière séance intense avant affûtage",
+      "sensation": "Effort contrôlé et régulier — intervalle 2 égal ou légèrement plus rapide",
+      "intensite_zone": "z4",
+      "cardio_max": "175 bpm", "denivele_vise": "< 100 m D+", "terrain": "Plat — Lausanne",
+      "seance": [
+        "Échauffement 3 km Zone 2 plat",
+        "2 x 15 min à 4:20-4:25/km — récup 3 min entre les deux",
+        "Terrain plat strict",
+        "FC attendue 168-173 bpm sur les intervalles",
+        "Retour 3 km Zone 2",
+        "Si jambes trop lourdes post-vendredi → 1 x 20 min à 4:25/km à la place"
+      ],
+      "conseil": "Dernière séance seuil de toute la prépa. Après samedi l'intensité descend définitivement. Si les jambes sont vraiment lourdes → 1x20 min suffit, ne force pas deux intervalles sur corps fatigué."
+    },
+    {
+      "jour": "Dimanche", "ville": "Lausanne",
+      "sport": "Repos actif", "type": "Récupération douce",
+      "km": 0, "dp": 0, "duree_min": 0,
+      "objectif": "Récupération avant semaine d'affûtage",
+      "sensation": "Marche légère si envie, étirements",
+      "intensite_zone": "repos",
+      "cardio_max": "—", "denivele_vise": "0 m D+", "terrain": "—",
+      "seance": ["Repos total ou marche 20-30 min","Étirements complets","Sommeil et hydratation"],
+      "conseil": "S-4 terminée. La semaine suivante l'intensité descend définitivement."
+    }
+  ]
+};
+
+// ============================================================
+// STATE
+// ============================================================
+const STORAGE_KEY = 'lhut_tracker_v1';
+let state = {
+  checked: {}, // { "4_Lundi": true, ... }
+  weeks: { prev: null, current: null, next: null }
+};
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) state = JSON.parse(raw);
+  } catch(e) {}
+}
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+function minutesToHM(mins) {
+  if (!mins || mins === 0) return '0min';
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h === 0) return `${m}min`;
+  if (m === 0) return `${h}h`;
+  return `${h}h${String(m).padStart(2,'0')}`;
+}
+
+function getZoneClass(zone) {
+  const z = (zone || '').toLowerCase();
+  if (z.includes('repos')) return 'repos';
+  if (z === 'z1') return 'z1';
+  if (z === 'z2') return 'z2';
+  if (z === 'z3') return 'z3';
+  if (z === 'z4') return 'z4';
+  if (z === 'z5') return 'z5';
+  return 'z2';
+}
+
+function getZoneLabel(zone) {
+  const z = (zone || '').toLowerCase();
+  if (z.includes('repos')) return 'REPOS';
+  if (z === 'z1') return 'Z1';
+  if (z === 'z2') return 'Z2';
+  if (z === 'z3') return 'Z3';
+  if (z === 'z4') return 'Z4 · SEUIL';
+  if (z === 'z5') return 'Z5 · VO2MAX';
+  return 'Z2';
+}
+
+// ============================================================
+// RENDER SESSIONS (current week)
+// ============================================================
+function renderCurrentWeek(weekData) {
+  const list = document.getElementById('sessions-list');
+  list.innerHTML = '';
+  document.getElementById('totals-card').style.display = 'block';
+
+  const semNum = weekData.semaine;
+  const sessions = weekData.jours.filter(j => j.jour !== 'totaux');
+
+  sessions.forEach((day, idx) => {
+    const key = `${semNum}_${day.jour}`;
+    const isDone = !!state.checked[key];
+    const isRest = day.km === 0 && day.duree_min === 0;
+
+    const card = document.createElement('div');
+    card.className = `session-card${isDone ? ' done' : ''}${isRest ? ' rest' : ''}`;
+    card.id = `card-${key}`;
+
+    const zoneClass = getZoneClass(day.intensite_zone);
+    const zoneLabel = getZoneLabel(day.intensite_zone);
+
+    let metaHTML = '';
+    if (!isRest) {
+      metaHTML = `
+        <div class="session-meta">
+          <span><span class="meta-icon">↔</span> ${day.km} km</span>
+          <span><span class="meta-icon">↑</span> ${day.dp} m D+</span>
+          <span><span class="meta-icon">⏱</span> ~${minutesToHM(day.duree_min)}</span>
+          <span><span class="meta-icon">📍</span> ${day.terrain || day.ville}</span>
+        </div>
+      `;
+    }
+
+    const seanceItems = (day.seance || []).map(s => `<li>${s}</li>`).join('');
+
+    card.innerHTML = `
+      <div class="session-main" onclick="toggleExpand('${key}')">
+        <div class="session-day">
+          <div class="day-name">${day.jour.substring(0,3).toUpperCase()}</div>
+          <div class="day-city">${day.ville}</div>
+        </div>
+        <div class="session-body">
+          <div class="session-type-row">
+            <span class="type-badge ${zoneClass}">${zoneLabel}</span>
+          </div>
+          <div class="session-name">${day.type}</div>
+          ${metaHTML}
+          <div class="sensation-tag">${day.sensation || ''}</div>
+        </div>
+        <div class="session-right">
+          <button class="check-btn ${isDone ? 'checked' : ''}" id="btn-${key}"
+            onclick="toggleDone(event,'${key}',${day.km},${day.dp},${day.duree_min})"
+            title="${isDone ? 'Marquer non faite' : 'Marquer comme faite'}">
+            ${isDone ? '✓' : ''}
+          </button>
+        </div>
+      </div>
+      <div class="session-detail">
+        <div class="detail-grid">
+          <div class="detail-block">
+            <div class="block-title">Programme</div>
+            <ul class="seance-list">${seanceItems}</ul>
+          </div>
+          <div class="detail-block">
+            <div class="block-title">Zones & données</div>
+            <div class="zone-pills">
+              <span class="zone-pill">🫀 FC max : ${day.cardio_max}</span>
+              <span class="zone-pill">⛰ D+ visé : ${day.denivele_vise}</span>
+              <span class="zone-pill">🗺 ${day.terrain || '—'}</span>
+            </div>
+            <div style="margin-top:12px;">
+              <div class="block-title">Objectif séance</div>
+              <div style="font-size:13px; color:var(--text-muted); line-height:1.4;">${day.objectif || '—'}</div>
+            </div>
+          </div>
+        </div>
+        ${day.conseil ? `<div class="conseil-box">${day.conseil}</div>` : ''}
+      </div>
+    `;
+    list.appendChild(card);
+  });
+
+  updateCurrentStats(weekData);
+}
+
+function toggleExpand(key) {
+  const card = document.getElementById(`card-${key}`);
+  if (card) card.classList.toggle('expanded');
+}
+
+function toggleDone(event, key, km, dp, duree) {
+  event.stopPropagation();
+  state.checked[key] = !state.checked[key];
+  saveState();
+  // Re-render current week
+  const wd = getCurrentWeekData();
+  if (wd) updateCurrentStats(wd);
+
+  const card = document.getElementById(`card-${key}`);
+  const btn = document.getElementById(`btn-${key}`);
+  if (card) card.classList.toggle('done', !!state.checked[key]);
+  if (btn) {
+    btn.classList.toggle('checked', !!state.checked[key]);
+    btn.textContent = state.checked[key] ? '✓' : '';
+  }
+}
+
+// ============================================================
+// STATS UPDATE
+// ============================================================
+function getCurrentWeekData() {
+  return state.weeks.current || WEEK_S4;
+}
+
+function updateCurrentStats(weekData) {
+  const semNum = weekData.semaine;
+  const sessions = weekData.jours.filter(j => j.jour !== 'totaux');
+  const activeSessions = sessions.filter(d => d.km > 0 || d.duree_min > 0);
+
+  let doneKm = 0, doneDP = 0, doneTime = 0, doneCount = 0;
+  activeSessions.forEach(day => {
+    const key = `${semNum}_${day.jour}`;
+    if (state.checked[key]) {
+      doneKm += day.km || 0;
+      doneDP += day.dp || 0;
+      doneTime += day.duree_min || 0;
+      doneCount++;
+    }
+  });
+
+  const totals = weekData.totaux || {};
+  const totalKmAvg = totals.km_min && totals.km_max ? Math.round((totals.km_min + totals.km_max) / 2) : null;
+  const totalDPAvg = totals.dp_min && totals.dp_max ? Math.round((totals.dp_min + totals.dp_max) / 2) : null;
+  const totalTimeAvg = totals.duree_min_min && totals.duree_max_min ? Math.round((totals.duree_min_min + totals.duree_max_min) / 2) : null;
+  const totalSessions = activeSessions.length;
+
+  // Compute from actual sessions if totals not in JSON
+  let totalKm = totalKmAvg || activeSessions.reduce((a, d) => a + (d.km || 0), 0);
+  let totalDP = totalDPAvg || activeSessions.reduce((a, d) => a + (d.dp || 0), 0);
+  let totalTime = totalTimeAvg || activeSessions.reduce((a, d) => a + (d.duree_min || 0), 0);
+
+  const remKm = Math.max(0, totalKm - doneKm);
+  const remDP = Math.max(0, totalDP - doneDP);
+  const remTime = Math.max(0, totalTime - doneTime);
+  const remSessions = Math.max(0, totalSessions - doneCount);
+
+  const pct = totalSessions > 0 ? Math.round((doneCount / totalSessions) * 100) : 0;
+
+  // Progress
+  document.getElementById('prog-pct').textContent = `${pct}%`;
+  document.getElementById('prog-bar').style.width = `${pct}%`;
+
+  // Overview
+  document.getElementById('ov-km-done').textContent = doneKm.toFixed(1);
+  document.getElementById('ov-km-total').textContent = `/ ${totalKm} km`;
+  document.getElementById('ov-km-rem').textContent = remKm.toFixed(1);
+  document.getElementById('ov-dp-done').textContent = doneDP;
+  document.getElementById('ov-dp-total').textContent = `/ ${totalDP} m`;
+  document.getElementById('ov-time-rem').textContent = minutesToHM(remTime);
+  document.getElementById('ov-time-done').textContent = doneTime > 0 ? `${minutesToHM(doneTime)} faits` : '';
+
+  // Totals card
+  document.getElementById('tot-km').textContent = `${totalKm}km`;
+  document.getElementById('tot-km-rem').textContent = `− ${remKm.toFixed(1)}km`;
+  document.getElementById('tot-dp').textContent = `${totalDP}m`;
+  document.getElementById('tot-dp-rem').textContent = `− ${remDP}m`;
+  document.getElementById('tot-time').textContent = minutesToHM(totalTime);
+  document.getElementById('tot-time-rem').textContent = `− ${minutesToHM(remTime)}`;
+  document.getElementById('tot-seances').textContent = `${totalSessions}`;
+  document.getElementById('tot-seances-rem').textContent = `− ${remSessions} à faire`;
+}
+
+// ============================================================
+// RENDER OTHER WEEK (prev/next - read only)
+// ============================================================
+function renderOtherWeek(weekData, tabId) {
+  const container = document.getElementById(`${tabId}-content`);
+  container.innerHTML = '';
+
+  const semNum = weekData.semaine;
+  const sessions = weekData.jours.filter(j => j.jour !== 'totaux');
+
+  // Periode / badge
+  if (weekData.periode) {
+    const el = document.getElementById(`${tabId}-periode`);
+    if (el) el.textContent = weekData.periode;
+  }
+
+  const summary = document.createElement('div');
+  let totKm = 0, totDP = 0, totTime = 0, totSessions = 0;
+  sessions.forEach(d => { totKm += d.km||0; totDP += d.dp||0; totTime += d.duree_min||0; if(d.km>0||d.duree_min>0) totSessions++; });
+
+  summary.innerHTML = `
+    <div class="week-overview" style="margin-bottom:20px;">
+      <div class="overview-stat"><div class="stat-val" style="color:var(--text)">${totKm}km</div><div class="stat-label">volume</div></div>
+      <div class="overview-stat"><div class="stat-val" style="color:var(--text)">${totDP}m</div><div class="stat-label">D+</div></div>
+      <div class="overview-stat"><div class="stat-val" style="color:var(--text)">${minutesToHM(totTime)}</div><div class="stat-label">durée</div></div>
+      <div class="overview-stat"><div class="stat-val" style="color:var(--text)">${totSessions}</div><div class="stat-label">séances</div></div>
+    </div>
+  `;
+  container.appendChild(summary);
+
+  const list = document.createElement('div');
+  list.className = 'sessions-list';
+  sessions.forEach(day => {
+    const isRest = day.km === 0 && day.duree_min === 0;
+    const zoneClass = getZoneClass(day.intensite_zone);
+    const zoneLabel = getZoneLabel(day.intensite_zone);
+    const key = `${semNum}_${day.jour}`;
+    const isDone = tabId === 'prev' ? true : false; // prev = all done
+
+    let metaHTML = '';
+    if (!isRest) {
+      metaHTML = `<div class="session-meta">
+        <span>↔ ${day.km}km</span>
+        <span>↑ ${day.dp}m</span>
+        <span>⏱ ${minutesToHM(day.duree_min)}</span>
+      </div>`;
+    }
+
+    const card = document.createElement('div');
+    card.className = `session-card${isDone ? ' done' : ''}${isRest ? ' rest' : ''}`;
+    card.style.cursor = 'default';
+    card.innerHTML = `
+      <div class="session-main">
+        <div class="session-day">
+          <div class="day-name">${day.jour.substring(0,3).toUpperCase()}</div>
+          <div class="day-city">${day.ville}</div>
+        </div>
+        <div class="session-body">
+          <div class="session-type-row"><span class="type-badge ${zoneClass}">${zoneLabel}</span></div>
+          <div class="session-name">${day.type}</div>
+          ${metaHTML}
+        </div>
+        ${tabId === 'prev' ? `<div class="session-right"><div style="font-size:18px; color:var(--accent2);">✓</div></div>` : ''}
+      </div>
+    `;
+    list.appendChild(card);
+  });
+  container.appendChild(list);
+}
+
+// ============================================================
+// FILE UPLOAD — JSON UNIFIÉ
+// ============================================================
+function loadUnifiedFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const data = JSON.parse(e.target.result);
+
+      // Support both unified format (semaine_courante/precedente/suivante)
+      // and legacy single-week format (semaine + jours)
+      let current, prev, next;
+
+      if (data.semaine_courante) {
+        current = data.semaine_courante;
+        prev    = data.semaine_precedente || null;
+        next    = data.semaine_suivante   || null;
+      } else if (data.semaine && data.jours) {
+        // Legacy: single week file
+        current = data;
+        prev = null; next = null;
+      } else {
+        alert('Format JSON non reconnu. Utilise le template fourni.');
+        return;
+      }
+
+      state.weeks.current = current;
+      state.weeks.prev    = prev;
+      state.weeks.next    = next;
+      saveState();
+
+      // Render current
+      renderCurrentWeek(current);
+      if (current.periode) document.getElementById('current-periode').textContent = current.periode;
+      if (current.semaine) document.getElementById('current-title').textContent = `SEMAINE ${current.semaine}`;
+
+      // Render prev if present
+      if (prev) {
+        renderOtherWeek(prev, 'prev');
+        if (prev.periode) document.getElementById('prev-periode').textContent = prev.periode;
+        if (prev.semaine) document.getElementById('prev-title').textContent = `SEMAINE ${prev.semaine}`;
+      }
+
+      // Render next if present
+      if (next) {
+        renderOtherWeek(next, 'next');
+        if (next.periode) document.getElementById('next-periode').textContent = next.periode;
+        if (next.semaine) document.getElementById('next-title').textContent = `SEMAINE ${next.semaine}`;
+      }
+
+    } catch(err) {
+      alert('JSON invalide : ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(el => el.classList.remove('active'));
+  document.getElementById(`tab-${tab}`).classList.add('active');
+  document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+}
+
+// ============================================================
+// INIT
+// ============================================================
+function init() {
+  loadState();
+
+  // Current week
+  const currentData = state.weeks.current || WEEK_S4;
+  renderCurrentWeek(currentData);
+  if (currentData.periode) document.getElementById('current-periode').textContent = currentData.periode;
+  if (currentData.semaine) document.getElementById('current-title').textContent = `SEMAINE ${currentData.semaine}`;
+
+  // Other weeks if loaded
+  if (state.weeks.prev) {
+    renderOtherWeek(state.weeks.prev, 'prev');
+    if (state.weeks.prev.periode) document.getElementById('prev-periode').textContent = state.weeks.prev.periode;
+    if (state.weeks.prev.semaine) document.getElementById('prev-title').textContent = `SEMAINE ${state.weeks.prev.semaine}`;
+  }
+  if (state.weeks.next) {
+    renderOtherWeek(state.weeks.next, 'next');
+    if (state.weeks.next.periode) document.getElementById('next-periode').textContent = state.weeks.next.periode;
+    if (state.weeks.next.semaine) document.getElementById('next-title').textContent = `SEMAINE ${state.weeks.next.semaine}`;
+  }
+}
+
+init();
+</script>
+</body>
+</html>
